@@ -4,9 +4,11 @@
 sdk-version: 2.4.0
 name: rental
 source: daml
-init-script: Main:setup
+init-script: Rental:setup
 version: 0.0.1
 dependencies:
   - daml-prim
   - daml-stdlib
   - daml-script
+build-options:
+  - --ghc-option=-Wno-controller-can

@@ -1,0 +1,78 @@
+module Rental where
+
+import Daml.Script
+import DA.Date
+
+template RentalProposal
+  with
+    landlord: Party
+    tenant: Party
+    amount: Decimal
+    currency: Text
+    tenancyStartDate: Date
+    tenancyEndDate: Date
+    terms: Text
+  where
+    signatory landlord
+    observer tenant
+    ensure amount > 0.0 && currency /= ""
+
+    choice AcceptRentalProposal
+      : ContractId RentalAgreement
+      controller tenant 
+        do
+          create RentalAgreement with ..
+    
+    choice RejectRentalProposal
+      : ContractId Rejection
+      with
+        rejectReason: Text
+      controller tenant
+        do 
+          create Rejection with ..
+    
+
+template RentalAgreement
+  with
+    landlord: Party
+    tenant: Party
+    amount: Decimal
+    currency: Text
+    tenancyStartDate: Date
+    tenancyEndDate: Date
+    terms: Text
+  where
+    signatory landlord, tenant
+    agreement "This is the tenancy agreement between landlord band tenant"
+
+
+template Rejection 
+  with
+    landlord: Party
+    tenant: Party
+    rejectReason: Text
+  where
+    signatory tenant
+    observer landlord
+
+
+setup = script do
+
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+
+  let
+    landlord = alice
+    tenant = bob
+    amount = 1000.00
+    currency = "USD"
+    tenancyStartDate = date 2022 Nov 01
+    tenancyEndDate = date 2023 Oct 31
+    terms = "No Furniture"
+    rejectReason = "Too Costly"
+
+  rentProposal <- submit landlord do createCmd RentalProposal with ..
+  --acceptProposal <- submit tenant do exerciseCmd rentProposal AcceptRentalProposal
+  rejectProposal <- submit tenant do exerciseCmd rentProposal RejectRentalProposal with ..
+  
+  pure()
